@@ -1,9 +1,11 @@
 #include <cassert>
+#include <cstddef>
 #include <functional>
 #include <iostream>
 #include <iterator>
+#include <utility>
 
-class Tree {
+class Set {
 
   class Node {
     unsigned int height = 1;
@@ -93,7 +95,7 @@ class Tree {
     return r;
   }
 
-  void print(Node *r) {
+  void print(Node *r) const {
     if (!r) {
       return;
     }
@@ -188,7 +190,7 @@ class Tree {
     return r;
   }
 
-  bool contains(Node *r, int val) {
+  bool contains(Node *r, int val) const {
     if (!r)
       return false;
 
@@ -201,7 +203,7 @@ class Tree {
     return contains(r->right, val);
   }
 
-  Node *find(Node *r, int val) {
+  Node *find(Node *r, int val) const {
     if (!r)
       return nullptr;
 
@@ -214,7 +216,7 @@ class Tree {
     return find(r->right, val);
   }
 
-  Node *lower_bound(Node *r, int val) {
+  Node *lower_bound(Node *r, int val) const {
     Node *ans = nullptr;
     while (r) {
       if (isEqual(val, r->data)) {
@@ -231,7 +233,7 @@ class Tree {
     return ans;
   }
 
-  Node *upper_bound(Node *r, int val) {
+  Node *upper_bound(Node *r, int val) const {
     Node *ans = nullptr;
     while (r) {
       if (compare(val, r->data)) {
@@ -244,7 +246,7 @@ class Tree {
     return ans;
   }
 
-  bool checkBalance(Node *r) {
+  bool checkBalance(Node *r) const {
     if (!r)
       return true;
     return r->Factor() <= 1 && r->Factor() >= -1 && checkBalance(r->left) &&
@@ -269,24 +271,53 @@ public:
     size = 0;
   }
 
-  bool Contains(int val) { return contains(root, val); }
+  bool Contains(int val) const { return contains(root, val); }
 
-  unsigned int Size() { return size; }
+  unsigned int Size() const { return size; }
 
-  void Print() {
+  void Print() const {
     print(root);
     std::cout << std::endl;
   }
 
-  bool CheckBalance() { return checkBalance(root); }
+  bool CheckBalance() const { return checkBalance(root); }
 
-  Tree() { compare = std::less<int>(); }
-  Tree(std::function<bool(int, int)> comp) { compare = comp; }
-  ~Tree() { Clear(); }
+  Set() { compare = std::less<int>(); }
+  Set(std::function<bool(int, int)> comp) { compare = comp; }
+  Set(const Set &other) {
+    compare = other.compare;
+    for (int val : other)
+      Insert(val);
+  }
+  ~Set() { Clear(); }
+  Set &operator=(const Set &other) {
+    if (this == &other)
+      return *this;
+
+    Clear();
+    for (int val : other)
+      Insert(val);
+
+    return *this;
+  }
+  Set &operator=(Set &&other) {
+    if (this == &other)
+      return *this;
+
+    Clear();
+    root = other.root;
+    size = other.size;
+    compare = other.compare;
+
+    other.root = nullptr;
+    other.size = 0;
+
+    return *this;
+  }
 
   class Iterator {
     Node *curr;
-    Tree *owner;
+    const Set *owner;
 
     Node *findMax(Node *r) {
       if (!r)
@@ -305,7 +336,7 @@ public:
     using pointer = const int *;
     using reference = const int &;
 
-    Iterator(Node *n, Tree *t) {
+    Iterator(Node *n, const Set *const t) {
       curr = n;
       owner = t;
     }
@@ -366,7 +397,7 @@ public:
   using iterator = Iterator;
   using reverse_iterator = std::reverse_iterator<Iterator>;
 
-  Iterator begin() {
+  Iterator begin() const {
     if (Size() == 0)
       return end();
 
@@ -377,39 +408,37 @@ public:
     return Iterator(t, this);
   }
 
-  Iterator end() { return Iterator(nullptr, this); }
-  reverse_iterator rbegin() { return reverse_iterator(end()); }
-  reverse_iterator rend() { return reverse_iterator(begin()); }
+  Iterator end() const { return Iterator(nullptr, this); }
+  reverse_iterator rbegin() const { return reverse_iterator(end()); }
+  reverse_iterator rend() const { return reverse_iterator(begin()); }
 
-  Iterator Find(int key) { return Iterator(find(root, key), this); }
-  Iterator Lower_bound(int key) {
+  Iterator Find(int key) const { return Iterator(find(root, key), this); }
+  Iterator Lower_bound(int key) const {
     return Iterator(lower_bound(root, key), this);
   }
-  Iterator Upper_bound(int key) {
+  Iterator Upper_bound(int key) const {
     return Iterator(upper_bound(root, key), this);
   }
 };
 
 int main() {
-  Tree t((std::less<int>()));
+  Set t{std::less<int>()};
   for (int i = 0; i < 50; i++) {
     t.Insert(i);
     assert(t.CheckBalance());
   }
 
   t.Remove(31);
-  t.Print();
-  // for (auto i : t)
-  //   std::cout << i << " ";
-  // std::cout << std::endl;
-  //
-  // for (auto i = t.Lower_bound(31); i != t.end(); i++)
-  //   std::cout << *i << " ";
-  // std::cout << std::endl;
-  //
-  // for (auto i = t.Upper_bound(31); i != t.end(); i++)
-  //   std::cout << *i << " ";
-  // std::cout << std::endl;
+  Set b(t);
+
+  // b.Remove(1);
+  Set a;
+  a = std::move(b);
+  auto ai = a.begin();
+  for (auto i : t)
+    assert(ai != a.end() && *(ai++) == i);
+
+  // a.Print();
 
   return 0;
 }
