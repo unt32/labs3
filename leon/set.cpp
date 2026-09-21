@@ -289,6 +289,12 @@ public:
     for (int val : other)
       Insert(val);
   }
+  Set(Set &&other) { *this = other; }
+  Set(std::initializer_list<int> init, std::function<bool(int, int)> comp) {
+    compare = comp;
+    for (int val : init)
+      Insert(val);
+  };
   ~Set() { Clear(); }
   Set &operator=(const Set &other) {
     if (this == &other)
@@ -442,3 +448,5 @@ int main() {
 
   return 0;
 }
+
+// https://github.com/AbsoluteVirtue/fcim_poo_21.6/tree/master/lab
