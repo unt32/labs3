@@ -4,6 +4,8 @@
 #include <iostream>
 #include <limits>
 #include <random>
+#include <sstream>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -110,7 +112,45 @@ template <typename Func> double measureTime(Func sortFunc, vector<int> arr) {
   return elapsed.count();
 }
 
+void printArray(const vector<int> &A) {
+  for (size_t i = 0; i < A.size(); i++) {
+    if (i > 0)
+      cout << " ";
+    cout << A[i];
+  }
+  cout << "\n";
+}
+
 int main() {
+  string line;
+  vector<int> arr;
+
+  while (getline(cin, line)) {
+    stringstream ss(line);
+    int x;
+    while (ss >> x) {
+      arr.push_back(x);
+    }
+    if (!arr.empty()) {
+      break;
+    }
+  }
+
+  if (!arr.empty()) {
+    vector<int> arrMerge = arr;
+    mergeSort(arrMerge, 0, static_cast<int>(arrMerge.size()) - 1);
+    printArray(arrMerge);
+
+    vector<int> arrQuick = arr;
+    quickSort(arrQuick, 0, static_cast<int>(arrQuick.size()) - 1);
+    printArray(arrQuick);
+
+    vector<int> arrBubble = arr;
+    bubbleSort(arrBubble);
+    printArray(arrBubble);
+    cout << "\n";
+  }
+
   vector<int> sizes = {1000, 5000, 10000, 20000, 50000, 100000};
 
   cout << fixed << setprecision(3);

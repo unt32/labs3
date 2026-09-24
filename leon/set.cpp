@@ -3,7 +3,7 @@
 #include <functional>
 #include <iostream>
 #include <iterator>
-#include <utility>
+#include <type_traits>
 
 class Set {
 
@@ -254,73 +254,6 @@ class Set {
   }
 
 public:
-  bool Insert(int val) {
-    unsigned int t = Size();
-    root = insert(root, new Node(val), nullptr);
-    return Size() - t == 1;
-  }
-
-  bool Remove(int val) {
-    unsigned int t = Size();
-    root = remove(root, val);
-    return t - Size() == 1;
-  }
-
-  void Clear() {
-    root = clear(root);
-    size = 0;
-  }
-
-  bool Contains(int val) const { return contains(root, val); }
-
-  unsigned int Size() const { return size; }
-
-  void Print() const {
-    print(root);
-    std::cout << std::endl;
-  }
-
-  bool CheckBalance() const { return checkBalance(root); }
-
-  Set() { compare = std::less<int>(); }
-  Set(std::function<bool(int, int)> comp) { compare = comp; }
-  Set(const Set &other) {
-    compare = other.compare;
-    for (int val : other)
-      Insert(val);
-  }
-  Set(Set &&other) { *this = other; }
-  Set(std::initializer_list<int> init, std::function<bool(int, int)> comp) {
-    compare = comp;
-    for (int val : init)
-      Insert(val);
-  };
-  ~Set() { Clear(); }
-  Set &operator=(const Set &other) {
-    if (this == &other)
-      return *this;
-
-    Clear();
-    for (int val : other)
-      Insert(val);
-
-    return *this;
-  }
-  Set &operator=(Set &&other) {
-    if (this == &other)
-      return *this;
-
-    Clear();
-    root = other.root;
-    size = other.size;
-    compare = other.compare;
-
-    other.root = nullptr;
-    other.size = 0;
-
-    return *this;
-  }
-
   class Iterator {
     Node *curr;
     const Set *owner;
@@ -397,8 +330,100 @@ public:
     }
 
     bool operator==(const Iterator &other) const { return curr == other.curr; }
-    bool operator!=(const Iterator &other) const { return curr != other.curr; }
+    bool operator!=(const Iterator &other) const { return !(*this == other); }
   };
+
+  bool Insert(int val) {
+    unsigned int t = Size();
+    root = insert(root, new Node(val), nullptr);
+    return Size() - t == 1;
+  }
+
+  bool Remove(int val) {
+    unsigned int t = Size();
+    root = remove(root, val);
+    return t - Size() == 1;
+  }
+
+  void Clear() {
+    root = clear(root);
+    size = 0;
+  }
+
+  bool Contains(int val) const { return contains(root, val); }
+
+  unsigned int Size() const { return size; }
+
+  void Print() const {
+    print(root);
+    std::cout << std::endl;
+  }
+
+  bool CheckBalance() const { return checkBalance(root); }
+
+  Set() { compare = std::less<int>(); }
+
+  Set(std::function<bool(int, int)> comp) { compare = comp; }
+
+  Set(Iterator first, Iterator last, std::function<bool(int, int)> comp) {
+    compare = comp;
+    while (first != last)
+      Insert(*(first++));
+  }
+  Set(const Set &other) { *this = other; }
+
+  Set(Set &&other) { *this = other; }
+
+  Set(std::initializer_list<int> init, std::function<bool(int, int)> comp) {
+    compare = comp;
+    for (int val : init)
+      Insert(val);
+  };
+
+  ~Set() { Clear(); }
+
+  bool operator==(const Set &other) const {
+    if (this == &other)
+      return true;
+
+    Iterator ti = begin();
+    Iterator oi = other.begin();
+
+    while (ti != end() && oi != other.end())
+      if (*(ti++) != *(oi++))
+        return false;
+
+    return ti == end() && oi == other.end();
+  }
+
+  bool operator!=(const Set &other) const { return !(*this == other); }
+
+  Set &operator=(const Set &other) {
+    if (this == &other)
+      return *this;
+
+    Clear();
+    compare = other.compare;
+    for (int val : other)
+      Insert(val);
+
+    return *this;
+  }
+
+  Set &operator=(Set &&other) {
+    if (this == &other)
+      return *this;
+
+    Clear();
+    root = other.root;
+    size = other.size;
+    compare = other.compare;
+
+    other.root = nullptr;
+    other.size = 0;
+
+    return *this;
+  }
 
   using iterator = Iterator;
   using reverse_iterator = std::reverse_iterator<Iterator>;
@@ -428,23 +453,25 @@ public:
 };
 
 int main() {
-  Set t{std::less<int>()};
+  auto cmp = std::less<int>();
+  Set t{cmp};
   for (int i = 0; i < 50; i++) {
     t.Insert(i);
     assert(t.CheckBalance());
   }
 
   t.Remove(31);
-  Set b(t);
+  Set b(t.begin(), t.end(), cmp);
 
-  // b.Remove(1);
-  Set a;
-  a = std::move(b);
+  b.Remove(1);
+  Set a = b;
   auto ai = a.begin();
-  for (auto i : t)
-    assert(ai != a.end() && *(ai++) == i);
 
   // a.Print();
+
+  std::cout << "t == a\t" << (t == a) << std::endl;
+  a.Insert(1);
+  std::cout << "t != a\t" << (t != a) << std::endl;
 
   return 0;
 }
