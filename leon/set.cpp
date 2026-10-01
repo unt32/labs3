@@ -3,7 +3,6 @@
 #include <functional>
 #include <iostream>
 #include <iterator>
-#include <type_traits>
 
 class Set {
 
@@ -382,18 +381,27 @@ public:
 
   ~Set() { Clear(); }
 
+  bool operator<(const Set &other) const {
+    return std::lexicographical_compare(begin(), end(), other.begin(),
+                                        other.end());
+  }
+
+  bool operator>(const Set &other) const { return other < *this; }
+  bool operator<=(const Set &other) const {
+    return *this == other || *this < other;
+  }
+  bool operator>=(const Set &other) const {
+    return *this == other || *this > other;
+  }
+
   bool operator==(const Set &other) const {
     if (this == &other)
       return true;
 
-    Iterator ti = begin();
-    Iterator oi = other.begin();
+    if (this->Size() != other.Size())
+      return false;
 
-    while (ti != end() && oi != other.end())
-      if (*(ti++) != *(oi++))
-        return false;
-
-    return ti == end() && oi == other.end();
+    return std::equal(begin(), end(), other.begin(), other.end());
   }
 
   bool operator!=(const Set &other) const { return !(*this == other); }
@@ -470,8 +478,11 @@ int main() {
   // a.Print();
 
   std::cout << "t == a\t" << (t == a) << std::endl;
-  a.Insert(1);
   std::cout << "t != a\t" << (t != a) << std::endl;
+  std::cout << "t < a\t" << (t < a) << std::endl;
+  std::cout << "t > a\t" << (t > a) << std::endl;
+  std::cout << "t <= a\t" << (t <= a) << std::endl;
+  std::cout << "t >= a\t" << (t >= a) << std::endl;
 
   return 0;
 }
