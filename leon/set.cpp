@@ -3,6 +3,8 @@
 #include <functional>
 #include <iostream>
 #include <iterator>
+#include <sstream>
+#include <utility>
 
 class Set {
 
@@ -387,12 +389,8 @@ public:
   }
 
   bool operator>(const Set &other) const { return other < *this; }
-  bool operator<=(const Set &other) const {
-    return *this == other || *this < other;
-  }
-  bool operator>=(const Set &other) const {
-    return *this == other || *this > other;
-  }
+  bool operator<=(const Set &other) const { return !(*this > other); }
+  bool operator>=(const Set &other) const { return !(*this < other); }
 
   bool operator==(const Set &other) const {
     if (this == &other)
@@ -433,8 +431,13 @@ public:
     return *this;
   }
 
+  friend std::ostream &operator<<(std::ostream &, const Set &);
+  friend std::istream &operator>>(std::istream &, Set &);
+
   using iterator = Iterator;
+  using const_iterator = Iterator;
   using reverse_iterator = std::reverse_iterator<Iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
   Iterator begin() const {
     if (Size() == 0)
@@ -460,9 +463,31 @@ public:
   }
 };
 
+std::ostream &operator<<(std::ostream &os, const Set &set) {
+  for (int i : set)
+    os << i << ' ';
+  return os;
+};
+std::istream &operator>>(std::istream &is, Set &set) {
+  int tmp;
+  while (is >> tmp)
+    set.Insert(tmp);
+  return is;
+};
+
+void printCompare(Set &a, Set &b) {
+  std::cout << "a == b\t" << (a == b) << std::endl;
+  std::cout << "a != b\t" << (a != b) << std::endl;
+  std::cout << "a <  b\t" << (a < b) << std::endl;
+  std::cout << "a >  b\t" << (a > b) << std::endl;
+  std::cout << "a <= b\t" << (a <= b) << std::endl;
+  std::cout << "a >= b\t" << (a >= b) << "\n\n" << std::endl;
+};
+
 int main() {
   auto cmp = std::less<int>();
   Set t{cmp};
+  assert(std::distance(t.begin(), t.end()) == 0);
   for (int i = 0; i < 50; i++) {
     t.Insert(i);
     assert(t.CheckBalance());
@@ -476,13 +501,22 @@ int main() {
   auto ai = a.begin();
 
   // a.Print();
+  // printCompare(a, t);
+  // printCompare(t, t);
+  // printCompare(t, a);
 
-  std::cout << "t == a\t" << (t == a) << std::endl;
-  std::cout << "t != a\t" << (t != a) << std::endl;
-  std::cout << "t < a\t" << (t < a) << std::endl;
-  std::cout << "t > a\t" << (t > a) << std::endl;
-  std::cout << "t <= a\t" << (t <= a) << std::endl;
-  std::cout << "t >= a\t" << (t >= a) << std::endl;
+  std::stringstream si;
+  si << a;
+  std::cout << a << std::endl;
+  t = std::move(a);
+
+  std::stringstream ss{"1 3 5 7 9"};
+  assert(std::distance(a.begin(), a.end()) == 0);
+  ss >> a;
+  assert(std::distance(a.begin(), a.end()) == 5);
+  std::cout << a << std::endl;
+
+  printCompare(a, t);
 
   return 0;
 }
