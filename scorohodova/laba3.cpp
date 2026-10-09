@@ -9,6 +9,7 @@ using namespace std;
 
 vector<int> heap_array(1, 0);
 int heap_size = 0;
+bool heap_built = false;
 
 int array_size() { return static_cast<int>(heap_array.size()) - 1; }
 
@@ -50,6 +51,7 @@ void BUILD_HEAP() {
   heap_size = array_size();
   for (int i = array_size() / 2; i >= 1; i--)
     HEAPIFY(i);
+  heap_built = true;
 }
 
 void HEAP_SORT() {
@@ -59,6 +61,7 @@ void HEAP_SORT() {
     heap_size--;
     HEAPIFY(1);
   }
+  heap_built = false;
 }
 
 int HEAP_EXTRACT_MAX() {
@@ -82,6 +85,12 @@ void HEAP_INSERT(int key) {
     i = parent(i);
   }
   heap_array[i] = key;
+  heap_built = true;
+}
+
+void ensureHeap() {
+  if (array_size() > 0 && !heap_built)
+    BUILD_HEAP();
 }
 
 int readInt(const string &prompt) {
@@ -100,6 +109,7 @@ void setArray(const vector<int> &v) {
   heap_array.assign(1, 0);
   heap_array.insert(heap_array.end(), v.begin(), v.end());
   heap_size = array_size();
+  heap_built = false;
 }
 
 void inputArray() {
@@ -167,6 +177,7 @@ int main() {
           cout << "Куча пуста.\n";
           continue;
         }
+        ensureHeap();
         int i = readInt("i = ");
         if (i < 1 || i > heap_size) {
           cout << "Индекс вне диапазона.\n";
@@ -180,9 +191,15 @@ int main() {
         }
         HEAP_SORT();
       } else if (command == "extract" || command == "x") {
+        if (array_size() == 0) {
+          cout << "Куча пуста.\n";
+          continue;
+        }
+        ensureHeap();
         int mx = HEAP_EXTRACT_MAX();
         cout << "max = " << mx << "\n";
       } else if (command == "insert" || command == "i") {
+        ensureHeap();
         int key = readInt("key = ");
         HEAP_INSERT(key);
       } else if (command == "check" || command == "c") {

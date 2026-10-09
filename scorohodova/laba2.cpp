@@ -81,6 +81,34 @@ void bubbleSort(vector<int> &A) {
   }
 }
 
+void heapify(vector<int> &A, int heapSize, int i) {
+  int largest = i;
+  int left = 2 * i + 1;
+  int right = 2 * i + 2;
+
+  if (left < heapSize && A[left] > A[largest])
+    largest = left;
+  if (right < heapSize && A[right] > A[largest])
+    largest = right;
+
+  if (largest != i) {
+    swap(A[i], A[largest]);
+    heapify(A, heapSize, largest);
+  }
+}
+
+void heapSort(vector<int> &A) {
+  int n = A.size();
+
+  for (int i = n / 2 - 1; i >= 0; i--)
+    heapify(A, n, i);
+
+  for (int i = n - 1; i > 0; i--) {
+    swap(A[0], A[i]);
+    heapify(A, i, 0);
+  }
+}
+
 vector<int> generateRandomArray(int size, int minVal, int maxVal) {
   vector<int> arr(size);
   random_device rd;
@@ -122,41 +150,14 @@ void printArray(const vector<int> &A) {
 }
 
 int main() {
-  string line;
-  vector<int> arr;
-
-  while (getline(cin, line)) {
-    stringstream ss(line);
-    int x;
-    while (ss >> x) {
-      arr.push_back(x);
-    }
-    if (!arr.empty()) {
-      break;
-    }
-  }
-
-  if (!arr.empty()) {
-    vector<int> arrMerge = arr;
-    mergeSort(arrMerge, 0, static_cast<int>(arrMerge.size()) - 1);
-    printArray(arrMerge);
-
-    vector<int> arrQuick = arr;
-    quickSort(arrQuick, 0, static_cast<int>(arrQuick.size()) - 1);
-    printArray(arrQuick);
-
-    vector<int> arrBubble = arr;
-    bubbleSort(arrBubble);
-    printArray(arrBubble);
-    cout << "\n";
-  }
 
   vector<int> sizes = {1000, 5000, 10000, 20000, 50000, 100000};
 
   cout << fixed << setprecision(3);
   cout << left << setw(COLUMN) << "Size" << setw(COLUMN) << "MergeSort"
-       << setw(COLUMN) << "QuickSort" << setw(COLUMN) << "BubbleSort" << endl;
-  cout << string(COLUMN * 4, '-') << endl;
+       << setw(COLUMN) << "QuickSort" << setw(COLUMN) << "BubbleSort"
+       << setw(COLUMN) << "HeapSort" << endl;
+  cout << string(COLUMN * 5, '-') << endl;
 
   for (int size : sizes) {
     vector<int> original = generateRandomArray(size, -100000, 100000);
@@ -170,8 +171,12 @@ int main() {
     double bubbleTime =
         measureTime([](vector<int> &a) { bubbleSort(a); }, original);
 
+    double heapTime =
+        measureTime([](vector<int> &a) { heapSort(a); }, original);
+
     cout << left << setw(COLUMN) << size << setw(COLUMN) << mergeTime
-         << setw(COLUMN) << quickTime << setw(COLUMN) << bubbleTime << endl;
+         << setw(COLUMN) << quickTime << setw(COLUMN) << bubbleTime
+         << setw(COLUMN) << heapTime << endl;
   }
 
   return 0;
