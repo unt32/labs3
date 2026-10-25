@@ -6,7 +6,7 @@
 #include <sstream>
 #include <utility>
 
-class Tree {
+class Set {
 
   class Node {
     unsigned int height = 1;
