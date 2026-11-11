@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-template <typename T> class Set {
+template <typename T, class Comp = std::less<T>> class Set {
 
   class Node {
     unsigned int height = 1;
@@ -38,7 +38,7 @@ template <typename T> class Set {
 
   Node *root = nullptr;
   unsigned int size = 0;
-  std::function<bool(T, T)> compare;
+  Comp compare;
 
   bool isEqual(T a, T b) const { return !compare(a, b) && !compare(b, a); }
 
@@ -363,12 +363,11 @@ public:
 
   bool CheckBalance() const { return checkBalance(root); }
 
-  Set() { compare = std::less<T>(); }
+  Set() : Set(std::less<T>()) {}
 
-  Set(std::function<bool(T, T)> comp) { compare = comp; }
+  Set(const Comp &comp) { compare = comp; }
 
-  template <typename Input>
-  Set(Input first, Input last, std::function<bool(T, T)> comp) {
+  template <typename Input> Set(Input first, Input last, Comp comp) {
     compare = comp;
     while (first != last)
       Insert(*(first++));
@@ -377,7 +376,7 @@ public:
 
   Set(Set &&other) { *this = other; }
 
-  Set(std::initializer_list<T> init, std::function<bool(T, T)> comp) {
+  Set(std::initializer_list<T> init, Comp comp) {
     compare = comp;
     for (T val : init)
       Insert(val);
