@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-template <typename T, class Comp = std::less<T>> class Set {
+template <typename T, class Comp = std::function<bool(T, T)>> class Set {
 
   class Node {
     unsigned int height = 1;
