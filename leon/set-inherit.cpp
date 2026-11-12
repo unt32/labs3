@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <functional>
@@ -6,7 +7,18 @@
 #include <sstream>
 #include <utility>
 
-class Set {
+class banana {
+public:
+  virtual ~banana() = default;
+  virtual bool Insert(int val) = 0;
+  virtual bool Remove(int val) = 0;
+  virtual bool Contains(int val) const = 0;
+  virtual void Clear() = 0;
+  virtual void Print() const = 0;
+  virtual unsigned int Size() const = 0;
+};
+
+class Set : public banana {
 
   class Node {
     unsigned int height = 1;
@@ -334,28 +346,28 @@ public:
     bool operator!=(const Iterator &other) const { return !(*this == other); }
   };
 
-  bool Insert(int val) {
+  bool Insert(int val) override {
     unsigned int t = Size();
     root = insert(root, new Node(val), nullptr);
     return Size() - t == 1;
   }
 
-  bool Remove(int val) {
+  bool Remove(int val) override {
     unsigned int t = Size();
     root = remove(root, val);
     return t - Size() == 1;
   }
 
-  void Clear() {
+  void Clear() override {
     root = clear(root);
     size = 0;
   }
 
-  bool Contains(int val) const { return contains(root, val); }
+  bool Contains(int val) const override { return contains(root, val); }
 
-  unsigned int Size() const { return size; }
+  unsigned int Size() const override { return size; }
 
-  void Print() const {
+  void Print() const override {
     print(root);
     std::cout << std::endl;
   }
@@ -381,7 +393,7 @@ public:
       Insert(val);
   };
 
-  ~Set() { Clear(); }
+  ~Set() override { Clear(); }
 
   bool operator<(const Set &other) const {
     return std::lexicographical_compare(begin(), end(), other.begin(),
@@ -475,49 +487,31 @@ std::istream &operator>>(std::istream &is, Set &set) {
   return is;
 };
 
-void printCompare(Set &a, Set &b) {
-  std::cout << "a == b\t" << (a == b) << std::endl;
-  std::cout << "a != b\t" << (a != b) << std::endl;
-  std::cout << "a <  b\t" << (a < b) << std::endl;
-  std::cout << "a >  b\t" << (a > b) << std::endl;
-  std::cout << "a <= b\t" << (a <= b) << std::endl;
-  std::cout << "a >= b\t" << (a >= b) << "\n\n" << std::endl;
-};
-
 int main() {
   auto cmp = std::less<int>();
-  Set t{cmp};
-  assert(std::distance(t.begin(), t.end()) == 0);
+  Set s{cmp};
+  banana &t = s;
   for (int i = 0; i < 50; i++) {
     t.Insert(i);
-    assert(t.CheckBalance());
+    assert(s.CheckBalance());
   }
 
-  t.Remove(31);
-  Set b(t.begin(), t.end(), cmp);
+  int i = 31;
+  t.Remove(i);
+  assert(!s.Contains(31));
 
-  b.Remove(1);
-  Set a = b;
-  auto ai = a.begin();
+  s.Clear();
+  assert(!t.Size());
 
-  // a.Print();
-  // printCompare(a, t);
-  // printCompare(t, t);
-  // printCompare(t, a);
+  Set a = std::move(s);
+  a.Insert(i);
 
   std::stringstream si;
   si << a;
-  std::cout << a << std::endl;
-  t = std::move(a);
-
-  std::stringstream ss{"1 3 5 7 9"};
-  assert(std::distance(a.begin(), a.end()) == 0);
-  ss >> a;
-  assert(std::distance(a.begin(), a.end()) == 5);
-  std::cout << a << std::endl;
-
-  printCompare(a, t);
-
+  si >> s;
+  assert(t.Contains(i));
+  t.Clear();
+  assert(s.Contains(i));
   return 0;
 }
 

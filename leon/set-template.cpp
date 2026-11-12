@@ -489,10 +489,12 @@ template <typename M> void printCompare(Set<M> &a, Set<M> &b) {
   std::cout << "1 >= 2\t" << (a >= b) << "\n\n" << std::endl;
 };
 
+bool haha(int a, int b) { return a > b; }
+
 int main() {
   using type = int;
 
-  auto cmp = std::less<type>();
+  auto cmp = haha;
   Set<type> t{cmp};
   assert(std::distance(t.begin(), t.end()) == 0);
   for (int i = 0; i < 50; i++) {
