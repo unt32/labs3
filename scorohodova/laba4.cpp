@@ -301,7 +301,7 @@ vector<int> randomKeys(int cnt, long long hi, mt19937_64 &gen) {
 
 void create(unique_ptr<Table> &table) {
   cout << "Тип адресации:\n"
-       << "  1 - прямая\n  2 - закрытая (цепочки)\n  3 - открытая\n";
+       << "  1 - прямая\n  2 - закрытая\n  3 - открытая\n";
   int type = readValue<int>("Выбор: ", 1, 3);
 
   if (type == 1) {
@@ -352,8 +352,7 @@ void create(unique_ptr<Table> &table) {
 }
 
 void add(Table &t) {
-  int k = readValue<int>("Ключ (0.." + to_string(t.maxKey()) + "): ", 0,
-                         (int)t.maxKey());
+  int k = readValue<int>("Ключ : ", 0, (int)t.maxKey());
   if (t.search(k) >= 0) {
     cout << "  Ключ уже есть в таблице.\n";
     return;
@@ -413,7 +412,7 @@ int main() {
                command == "del" || command == "f" || command == "find" ||
                command == "p" || command == "print") {
         if (!table) {
-          cout << "Сначала создайте таблицу (c).\n";
+          cout << "Сначала создайте таблицу.\n";
           continue;
         }
         if (command == "a" || command == "add")
