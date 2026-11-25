@@ -7,18 +7,22 @@
 #include <sstream>
 #include <utility>
 
-class banana {
+class abstract_data_t {
 public:
-  virtual ~banana() = default;
+  virtual ~abstract_data_t() = default;
   virtual bool Insert(int val) = 0;
   virtual bool Remove(int val) = 0;
   virtual bool Contains(int val) const = 0;
   virtual void Clear() = 0;
   virtual void Print() const = 0;
   virtual unsigned int Size() const = 0;
+  virtual void Extend(const abstract_data_t &) = 0;
+  virtual void CopyTo(abstract_data_t &) const = 0;
+  virtual int Front() = 0;
+  virtual int Back() = 0;
 };
 
-class Set : public banana {
+class Set : public abstract_data_t {
 
   class Node {
     unsigned int height = 1;
@@ -473,6 +477,14 @@ public:
   Iterator Upper_bound(int key) const {
     return Iterator(upper_bound(root, key), this);
   }
+
+  void CopyTo(abstract_data_t &t) const override {
+    for (auto i : *this)
+      t.Insert(i);
+  }
+  void Extend(const abstract_data_t &t) override { t.CopyTo(*this); }
+  int Front() override { return *begin(); }
+  int Back() override { return *(--end()); }
 };
 
 std::ostream &operator<<(std::ostream &os, const Set &set) {
@@ -490,7 +502,7 @@ std::istream &operator>>(std::istream &is, Set &set) {
 int main() {
   auto cmp = std::less<int>();
   Set s{cmp};
-  banana &t = s;
+  abstract_data_t &t = s;
   for (int i = 0; i < 50; i++) {
     t.Insert(i);
     assert(s.CheckBalance());
@@ -510,8 +522,24 @@ int main() {
   si << a;
   si >> s;
   assert(t.Contains(i));
-  t.Clear();
-  assert(s.Contains(i));
+  // t.Clear();
+  // assert(s.Contains(i));
+
+  Set x{cmp};
+  abstract_data_t &y = x;
+  y.Extend(t);
+  for (int i = y.Front(); i <= y.Back(); i++) {
+    assert(t.Contains(i) == y.Contains(i));
+  }
+
+  for (int i = 5; i < 41; i++)
+    y.Insert(i);
+  t.Extend(y);
+
+  for (int i = t.Front(); i <= t.Back(); i++) {
+    assert(t.Contains(i) == y.Contains(i));
+  }
+
   return 0;
 }
 

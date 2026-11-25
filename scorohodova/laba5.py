@@ -1,13 +1,3 @@
-"""
-Лабораторная работа №5. Табличный симплекс-метод и метод искусственных переменных (M-метод).
-
-Задача ЛП с двумя переменными:  W = c1*X1 + c2*X2 -> min / max
-Ограничения:                    a1*X1 + a2*X2  (<=, >=, =)  b ;   X1, X2 >= 0
-
-Расчёты ведутся в точных дробях (fractions.Fraction), поэтому в таблицах нет
-ошибок округления. Запуск:  python simplex_lab5.py
-"""
-
 from fractions import Fraction as F
 import sys
 import tkinter as tk
@@ -15,39 +5,24 @@ import tkinter.font as tkfont
 from tkinter import ttk, messagebox
 
 
-# ======================================================================
-#                              РЕШАТЕЛЬ
-# ======================================================================
-def fmt(x):
-    """Дробь -> строка: 3, -1/6, 7/8."""
-    x = F(x)
-    return str(x.numerator) if x.denominator == 1 else f"{x.numerator}/{x.denominator}"
+def format_fraction(value):
+    value = F(value)
+    if value.denominator == 1:
+        return str(value.numerator)
+    return f"{value.numerator}/{value.denominator}"
 
 
-def ratio_str(b, a):
-    """Строка отношения B/a для столбца-подсказки, как в рукописных таблицах."""
+def format_ratio(numerator, denominator):
+    def format_part(value):
+        text = format_fraction(value)
+        return f"({text})" if "/" in text or value < 0 else text
 
-    def w(v):
-        t = fmt(v)
-        return f"({t})" if ("/" in t or v < 0) else t
-
-    return f"{w(b)}/{w(a)}"
+    return f"{format_part(numerator)}/{format_part(denominator)}"
 
 
-def solve(c, constraints, goal="min"):
-    """
-    c           -- [c1, c2] коэффициенты целевой функции
-    constraints -- список (a1, a2, знак, b), знак из {"<=", ">=", "="}
-    goal        -- "min" или "max"
-
-    Возвращает словарь:
-      iterations -- список таблиц (каждая -- словарь для отрисовки)
-      status     -- "optimal" | "unbounded" | "infeasible"
-      x, W       -- оптимальный план и значение целевой функции (если optimal)
-    Для max решается задача на min для -W, ответ пересчитывается обратно.
-    """
+def solve_linear_program(objective_coefficients, constraints, goal="min"):
     sign_goal = 1 if goal == "min" else -1
-    cost = [F(v) * sign_goal for v in c]  # внутри всегда MIN
+    cost = [F(value) * sign_goal for value in objective_coefficients]
     m = len(constraints)
 
     rows = []  # (a1, a2, знак, b) с b >= 0
@@ -58,8 +33,6 @@ def solve(c, constraints, goal="min"):
             s = {"<=": ">=", ">=": "<=", "=": "="}[s]
         rows.append((a1, a2, s, b))
 
-    # --- приведение к каноническому виду ---
-    # столбцы: X1, X2, затем доп. переменные (X3...), затем искусственные
     n_main = 2
     extra = []  # (номер ограничения, +1 / -1)
     for i, (_, _, s, _) in enumerate(rows):
@@ -125,17 +98,17 @@ def solve(c, constraints, goal="min"):
         table = dict(
             k=k,
             basis=list(basis),
-            cB=["M" if v in art else fmt(c_full[v]) for v in basis],
-            A=[[fmt(v) for v in r] for r in A],
-            b=[fmt(v) for v in b],
-            W=[fmt(v) for v in W_row],
-            Wb=fmt(Wb),
-            M=[fmt(v) for v in M_row],
-            Mb=fmt(Mb),
+            cB=["M" if v in art else format_fraction(c_full[v]) for v in basis],
+            A=[[format_fraction(value) for value in row] for row in A],
+            b=[format_fraction(value) for value in b],
+            W=[format_fraction(value) for value in W_row],
+            Wb=format_fraction(Wb),
+            M=[format_fraction(value) for value in M_row],
+            Mb=format_fraction(Mb),
             has_art=has_art,
             n=n,
             art=sorted(art),
-            c_head=[("M" if j in art else fmt(c_full[j])) for j in range(n)],
+            c_head=["M" if j in art else format_fraction(c_full[j]) for j in range(n)],
             enter=None,
             leave=None,
             ratio=None,
@@ -176,7 +149,7 @@ def solve(c, constraints, goal="min"):
         table.update(
             enter=enter,
             leave=leave,
-            ratio=[ratio_str(b[i], A[i][enter]) for i in range(m)],
+            ratio=[format_ratio(b[i], A[i][enter]) for i in range(m)],
             message=f"Минимальное отношение -> выводим X{basis[leave] + 1}",
         )
         iterations.append(table)
@@ -363,40 +336,51 @@ class App(tk.Tk):
 
     def _read(self):
         try:
-            c = [
+            objective_coefficients = [
                 F(self.c1.get().replace(",", ".").strip()),
                 F(self.c2.get().replace(",", ".").strip()),
             ]
-            cons = []
-            for _, e1, e2, sv, e3 in self.rows:
-                cons.append(
+            constraints = []
+            for (
+                _,
+                first_coefficient,
+                second_coefficient,
+                sign,
+                right_side,
+            ) in self.rows:
+                constraints.append(
                     (
-                        F(e1.get().replace(",", ".").strip()),
-                        F(e2.get().replace(",", ".").strip()),
-                        sv.get(),
-                        F(e3.get().replace(",", ".").strip()),
+                        F(first_coefficient.get().replace(",", ".").strip()),
+                        F(second_coefficient.get().replace(",", ".").strip()),
+                        sign.get(),
+                        F(right_side.get().replace(",", ".").strip()),
                     )
                 )
         except (ValueError, ZeroDivisionError):
             raise ValueError(
                 "Все коэффициенты должны быть числами (допустимы дроби вида 1/3 и десятичные 0.5)."
             )
-        return c, cons
+        return objective_coefficients, constraints
 
     def on_solve(self):
         self.clear_output()
         try:
-            c, cons = self._read()
+            objective_coefficients, constraints = self._read()
         except ValueError as e:
             messagebox.showerror("Ошибка ввода", str(e))
             return
-        res = solve(c, cons, self.goal.get())
+        res = solve_linear_program(objective_coefficients, constraints, self.goal.get())
         for it in res["iterations"]:
             self.draw_table(it)
         if res["status"] == "optimal":
             x = res["x"]
-            names = "   ".join(f"X{i + 1} = {fmt(v)}" for i, v in enumerate(x))
-            txt = f"Оптимальное решение найдено.\n{names}\nW = {fmt(res['W'])}"
+            names = "   ".join(
+                f"X{i + 1} = {format_fraction(value)}" for i, value in enumerate(x)
+            )
+            txt = (
+                f"Оптимальное решение найдено.\n{names}"
+                f"\nW = {format_fraction(res['W'])}"
+            )
             color = "#1e6b34"
         elif res["status"] == "unbounded":
             txt, color = "Целевая функция не ограничена.", "#c00000"
